@@ -419,43 +419,65 @@ export const MainScene: React.FC = () => {
 
 // Nouveau décor pixel art animé
 function PixelArtBackground() {
-  // Inspiré de votre référence, nuages, ciel, étoiles, etc.
+  // Fond 100% pixel art animé, responsive, parallax, étoiles scintillantes, lune, collines, château, arbres, buissons, fleurs
+  // Plusieurs plans de nuages roses volumineux animés (parallax)
+  // Étoiles scintillantes (opacité animée)
+  // Lune pixel art
+  // Collines, château, arbres, buissons, fleurs pixel art
+  // Responsive : preserveAspectRatio="xMidYMid slice"
   return (
     <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1280 720" style={{imageRendering: 'pixelated', zIndex: 0}} preserveAspectRatio="xMidYMid slice">
-      <rect width="1280" height="720" fill="#6d4e9e" />
-      {/* Nuages parallax */}
+      {/* Ciel dégradé */}
+      <defs>
+        <linearGradient id="sky-pixel" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#6d4e9e" />
+          <stop offset="100%" stopColor="#e0b7e6" />
+        </linearGradient>
+      </defs>
+      <rect width="1280" height="720" fill="url(#sky-pixel)" />
+      {/* Lune pixel art */}
+      <rect x="1120" y="60" width="24" height="24" fill="#fffbe6" rx="6" />
+      <rect x="1132" y="72" width="8" height="8" fill="#e0b7e6" rx="2" />
+      {/* Étoiles pixel art scintillantes */}
       <g>
-        <motion.rect x="100" y="120" width="400" height="60" rx="30" fill="#f9d6f7" animate={{ x: [100, 180, 100] }} transition={{ duration: 30, repeat: Infinity, ease: 'linear' }} />
-        <motion.rect x="600" y="80" width="300" height="50" rx="25" fill="#e0b7e6" animate={{ x: [600, 700, 600] }} transition={{ duration: 40, repeat: Infinity, ease: 'linear' }} />
-        <motion.rect x="900" y="200" width="250" height="40" rx="20" fill="#f9d6f7" animate={{ x: [900, 1000, 900] }} transition={{ duration: 50, repeat: Infinity, ease: 'linear' }} />
+        <motion.rect x="100" y="40" width="3" height="3" fill="#fff" animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 2, repeat: Infinity }} />
+        <motion.rect x="300" y="60" width="2" height="2" fill="#fff" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }} />
+        <motion.rect x="700" y="30" width="2" height="2" fill="#fff" animate={{ opacity: [0.7, 1, 0.7] }} transition={{ duration: 2.2, repeat: Infinity, delay: 1 }} />
+        <motion.rect x="900" y="90" width="2" height="2" fill="#fff" animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 2.8, repeat: Infinity, delay: 0.7 }} />
+        <motion.rect x="1200" y="50" width="2" height="2" fill="#fff" animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 2.1, repeat: Infinity, delay: 1.2 }} />
       </g>
-      {/* Collines */}
-      <rect x="0" y="600" width="1280" height="120" fill="#4e3573" />
-      <rect x="0" y="650" width="1280" height="70" fill="#2d1b47" />
-      {/* Arbres stylisés */}
+      {/* Nuages roses volumineux, parallax (3 plans) */}
       <g>
-        <rect x="200" y="620" width="12" height="40" fill="#fffbe6" />
-        <rect x="220" y="630" width="10" height="30" fill="#b7e6e0" />
-        <rect x="400" y="640" width="14" height="35" fill="#ffe7b7" />
-        <rect x="600" y="625" width="10" height="40" fill="#e0b7e6" />
-        <rect x="1100" y="630" width="12" height="38" fill="#f9d6f7" />
+        <motion.rect x="80" y="120" width="420" height="60" rx="30" fill="#f9d6f7" animate={{ x: [80, 180, 80] }} transition={{ duration: 36, repeat: Infinity, ease: 'linear' }} />
+        <motion.rect x="600" y="80" width="320" height="50" rx="25" fill="#e0b7e6" animate={{ x: [600, 700, 600] }} transition={{ duration: 48, repeat: Infinity, ease: 'linear' }} />
+        <motion.rect x="900" y="200" width="260" height="40" rx="20" fill="#f9d6f7" animate={{ x: [900, 1000, 900] }} transition={{ duration: 60, repeat: Infinity, ease: 'linear' }} />
       </g>
-      {/* Fleurs pixel */}
+      {/* Collines pixel art */}
+      <rect x="0" y="600" width="1280" height="80" fill="#4e3573" />
+      <rect x="0" y="670" width="1280" height="50" fill="#2d1b47" />
+      {/* Château pixel art */}
       <g>
-        <rect x="250" y="690" width="4" height="8" fill="#ffe7b7" />
-        <rect x="255" y="692" width="2" height="4" fill="#f9d6f7" />
-        <rect x="800" y="700" width="4" height="8" fill="#b7e6e0" />
-        <rect x="805" y="702" width="2" height="4" fill="#e0b7e6" />
+        <rect x="1040" y="570" width="32" height="40" fill="#fffbe6" />
+        <rect x="1052" y="550" width="8" height="20" fill="#b7e6e0" />
+        <rect x="1060" y="560" width="8" height="10" fill="#e0b7e6" />
+        <rect x="1050" y="590" width="12" height="20" fill="#ffe7b7" />
       </g>
-      {/* Lune pixel */}
-      <rect x="1150" y="60" width="18" height="18" fill="#fffbe6" rx="4" />
-      {/* Étoiles pixel */}
+      {/* Arbres, buissons, fleurs pixel art */}
       <g>
-        <rect x="100" y="40" width="2" height="2" fill="#fff" />
-        <rect x="300" y="60" width="2" height="2" fill="#fff" />
-        <rect x="700" y="30" width="2" height="2" fill="#fff" />
-        <rect x="900" y="90" width="2" height="2" fill="#fff" />
-        <rect x="1200" y="50" width="2" height="2" fill="#fff" />
+        {/* Arbres */}
+        <rect x="200" y="620" width="10" height="38" fill="#fffbe6" />
+        <rect x="220" y="630" width="8" height="28" fill="#b7e6e0" />
+        <rect x="400" y="640" width="12" height="32" fill="#ffe7b7" />
+        <rect x="600" y="625" width="8" height="36" fill="#e0b7e6" />
+        <rect x="1100" y="630" width="10" height="34" fill="#f9d6f7" />
+        {/* Buissons */}
+        <rect x="250" y="690" width="12" height="12" fill="#b7e6e0" />
+        <rect x="800" y="700" width="10" height="10" fill="#e0b7e6" />
+        <rect x="900" y="710" width="14" height="10" fill="#f9d6f7" />
+        {/* Fleurs */}
+        <rect x="255" y="702" width="2" height="4" fill="#f9d6f7" />
+        <rect x="805" y="702" width="2" height="4" fill="#ffe7b7" />
+        <rect x="1200" y="715" width="2" height="4" fill="#ffe7b7" />
       </g>
     </svg>
   );
