@@ -224,26 +224,108 @@ function AnimatedFog() {
   );
 }
 
+// Mini-jeux mignons pour chaque mot
+function MiniGame({ step, onSuccess }: { step: number; onSuccess: () => void }) {
+  // 5 mini-jeux différents, un par mot
+  const [open, setOpen] = useState(false);
+  const [blown, setBlown] = useState(false);
+  const [dragged, setDragged] = useState(false);
+  const [drawn, setDrawn] = useState(false);
+  if (step === 0) {
+    // Relier deux cœurs
+    return (
+      <div className="flex flex-col items-center">
+        <div className="mb-4 text-pink-200">Relie les deux cœurs pour commencer</div>
+        <button
+          className="text-5xl hover:scale-110 transition-transform"
+          onClick={onSuccess}
+          style={{ background: 'none', border: 'none' }}
+        >
+          ❤️‍🔥 ➡️ ❤️
+        </button>
+      </div>
+    );
+  }
+  if (step === 1) {
+    // Faire éclore une fleur
+    return (
+      <div className="flex flex-col items-center">
+        <div className="mb-4 text-pink-200">Clique pour faire éclore la fleur</div>
+        <button
+          className="transition-transform"
+          onClick={() => { setOpen(true); setTimeout(onSuccess, 700); }}
+          style={{ background: 'none', border: 'none' }}
+        >
+          <span className="text-5xl" role="img" aria-label="fleur">{open ? '🌸' : '🌱'}</span>
+        </button>
+      </div>
+    );
+  }
+  if (step === 2) {
+    // Souffler sur des lucioles
+    return (
+      <div className="flex flex-col items-center">
+        <div className="mb-4 text-pink-200">Souffle sur les lucioles (appuie !)</div>
+        <button
+          className="text-4xl hover:scale-110 transition-transform"
+          onClick={() => { setBlown(true); setTimeout(onSuccess, 700); }}
+          style={{ background: 'none', border: 'none' }}
+        >
+          {blown ? '✨✨✨' : '🟡🟡🟡'}
+        </button>
+      </div>
+    );
+  }
+  if (step === 3) {
+    // Glisser une étoile vers la sphère
+    return (
+      <div className="flex flex-col items-center">
+        <div className="mb-4 text-pink-200">Fais glisser l'étoile vers la lumière</div>
+        <button
+          className="text-5xl hover:scale-110 transition-transform"
+          onClick={() => { setDragged(true); setTimeout(onSuccess, 700); }}
+          style={{ background: 'none', border: 'none' }}
+        >
+          {dragged ? '⭐️✨' : '⭐️➡️💡'}
+        </button>
+      </div>
+    );
+  }
+  if (step === 4) {
+    // Dessiner un arc lumineux
+    return (
+      <div className="flex flex-col items-center">
+        <div className="mb-4 text-pink-200">Trace un arc lumineux (appuie !)</div>
+        <button
+          className="text-5xl hover:scale-110 transition-transform"
+          onClick={() => { setDrawn(true); setTimeout(onSuccess, 700); }}
+          style={{ background: 'none', border: 'none' }}
+        >
+          {drawn ? '🌈✨' : '🌈➡️💡'}
+        </button>
+      </div>
+    );
+  }
+  return null;
+}
+
 export const MainScene: React.FC = () => {
   const [currentMessage, setCurrentMessage] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const progress = currentMessage / (messages.length - 1);
   const isEnd = currentMessage === messages.length - 1;
+  const [showGame, setShowGame] = useState(true);
 
-  // Désactive l'auto-next, passe à l'interaction manuelle
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     setCurrentMessage((prev) => (prev + 1) % messages.length);
-  //   }, 8000);
-  //   return () => clearInterval(interval);
-  // }, []);
-
-  const handleNext = () => {
-    if (!isEnd) setCurrentMessage((prev) => prev + 1);
+  const handleGameSuccess = () => {
+    setShowGame(false);
+    setTimeout(() => setShowGame(true), 1200);
+    setTimeout(() => {
+      if (!isEnd) setCurrentMessage((prev) => prev + 1);
+    }, 1000);
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden relative font-sans" style={{background: 'linear-gradient(to bottom, #2d1b47 0%, #e0b7e6 100%)'}}>
+    <div className="h-screen w-screen overflow-hidden relative font-sans flex items-center justify-center" style={{background: 'linear-gradient(to bottom, #2d1b47 0%, #e0b7e6 100%)', minHeight: '100dvh'}}>
       <Landscape />
       <StarSky />
       <Fireflies />
@@ -251,7 +333,7 @@ export const MainScene: React.FC = () => {
       <Butterflies />
       <AnimatedFog />
       <MotherAndChild progress={progress} />
-      <div className="absolute inset-0 flex flex-col items-center justify-center z-30 pointer-events-none">
+      <div className="absolute inset-0 flex flex-col items-center justify-center z-30 pointer-events-none px-2">
         <LuminousSphere playing={isPlaying} />
         <AnimatePresence mode="wait">
           <PoeticMessage
@@ -261,16 +343,10 @@ export const MainScene: React.FC = () => {
           />
         </AnimatePresence>
       </div>
-      <div className="absolute bottom-0 left-0 w-full z-40 pointer-events-auto">
+      <div className="absolute bottom-0 left-0 w-full z-40 pointer-events-auto flex flex-col items-center justify-center pb-4">
         <AudioPlayer onPlayingChange={setIsPlaying} />
-        {!isEnd && (
-          <button
-            onClick={handleNext}
-            className="mx-auto mt-8 block bg-pink-200/80 hover:bg-pink-300 text-pink-900 font-bold py-3 px-8 rounded-full shadow-lg text-xl transition-all"
-            style={{ pointerEvents: 'auto' }}
-          >
-            Voir le message suivant
-          </button>
+        {!isEnd && showGame && (
+          <MiniGame step={currentMessage} onSuccess={handleGameSuccess} />
         )}
         {isEnd && (
           <div className="text-center mt-8 text-3xl text-pink-100 font-poetic drop-shadow-lg animate-bounce">
