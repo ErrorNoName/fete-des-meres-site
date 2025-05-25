@@ -4,6 +4,7 @@ import Character from './Character';
 import SkyMessage from './SkyMessage';
 import { Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { backgroundMusic, birdsSound, windSound } from '../utils/sounds';
 
 interface AnimationSceneProps {
   id: string;
@@ -18,6 +19,11 @@ const AnimationScene: React.FC<AnimationSceneProps> = ({ id }) => {
   const [showFinalMessage, setShowFinalMessage] = useState(false);
   const lastShakeTime = useRef(0);
   const progressRef = useRef(0);
+  // Audio refs
+  const musicRef = useRef<HTMLAudioElement | null>(null);
+  const birdsRef = useRef<HTMLAudioElement | null>(null);
+  const windRef = useRef<HTMLAudioElement | null>(null);
+  const [muted, setMuted] = useState(false);
   
   // Load the animation data based on the ID
   useEffect(() => {
@@ -161,13 +167,97 @@ const AnimationScene: React.FC<AnimationSceneProps> = ({ id }) => {
     borderTop: `1px solid rgba(${100 * brightness}, ${50 * brightness}, ${150 * brightness}, ${brightness})`,
   };
   
+  // Ajout d'un paysage naturel épuré et d'un sentier
+  const renderBackgroundNature = () => {
+    // Prairie, sentier, arbres stylisés, soleil
+    return (
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1000 600" preserveAspectRatio="none">
+        {/* Ciel dégradé */}
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#b3e0ff" />
+            <stop offset="100%" stopColor="#e6ffe6" />
+          </linearGradient>
+          <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#b6e2a1" />
+            <stop offset="100%" stopColor="#6db37b" />
+          </linearGradient>
+        </defs>
+        {/* Ciel */}
+        <rect x="0" y="0" width="1000" height="400" fill="url(#sky)" />
+        {/* Soleil */}
+        <circle cx={200 + 600 * brightness} cy={120 - 40 * brightness} r="40" fill="#fff9c4" opacity={0.7 + 0.3 * brightness} />
+        {/* Nuages */}
+        <ellipse cx="300" cy="100" rx="60" ry="20" fill="#fff" opacity="0.5" />
+        <ellipse cx="700" cy="80" rx="50" ry="18" fill="#fff" opacity="0.4" />
+        {/* Arbres */}
+        <ellipse cx="120" cy="340" rx="18" ry="60" fill="#a3c585" opacity="0.7" />
+        <ellipse cx="880" cy="350" rx="22" ry="70" fill="#a3c585" opacity="0.6" />
+        {/* Sol */}
+        <rect x="0" y="400" width="1000" height="200" fill="url(#ground)" />
+        {/* Sentier sinueux */}
+        <path d="M 100 500 Q 300 420 500 520 Q 700 600 900 480" stroke="#e2c799" strokeWidth="30" fill="none" opacity="0.7" />
+        {/* Fleurs */}
+        <circle cx="200" cy="550" r="5" fill="#ffb6b9" />
+        <circle cx="800" cy="570" r="4" fill="#fff176" />
+      </svg>
+    );
+  };
+  
+  // Améliore le mouvement du personnage pour suivre le sentier
+  const getMotherPosition = (progress: number) => {
+    // Sentier : M 100 500 Q 300 420 500 520 Q 700 600 900 480
+    // Interpolation sur 3 segments de Bézier
+    const t = progress / 100;
+    let x, y;
+    if (t < 0.5) {
+      // Premier segment
+      const t2 = t * 2;
+      // Quadratic Bézier: (1-t)^2*100 + 2*(1-t)*t*300 + t^2*500
+      x = (1 - t2) * (1 - t2) * 100 + 2 * (1 - t2) * t2 * 300 + t2 * t2 * 500;
+      y = (1 - t2) * (1 - t2) * 500 + 2 * (1 - t2) * t2 * 420 + t2 * t2 * 520;
+    } else {
+      // Second segment
+      const t2 = (t - 0.5) * 2;
+      x = (1 - t2) * (1 - t2) * 500 + 2 * (1 - t2) * t2 * 700 + t2 * t2 * 900;
+      y = (1 - t2) * (1 - t2) * 520 + 2 * (1 - t2) * t2 * 600 + t2 * t2 * 480;
+    }
+    return { x, y };
+  };
+  
+  // Démarre la musique douce au début
+  useEffect(() => {
+    if (musicRef.current && !muted) {
+      musicRef.current.volume = 0.5;
+      musicRef.current.loop = true;
+      musicRef.current.play().catch(() => {});
+    }
+    if (birdsRef.current && !muted) {
+      birdsRef.current.volume = 0.2;
+      birdsRef.current.loop = true;
+      birdsRef.current.play().catch(() => {});
+    }
+    if (windRef.current && !muted) {
+      windRef.current.volume = 0.15;
+      windRef.current.loop = true;
+      windRef.current.play().catch(() => {});
+    }
+    if (muted) {
+      musicRef.current?.pause();
+      birdsRef.current?.pause();
+      windRef.current?.pause();
+    }
+  }, [muted]);
+  
   return (
     <div 
-      className="fixed inset-0 flex flex-col overflow-hidden" 
+      className="fixed inset-0 flex flex-col overflow-hidden bg-gradient-to-b from-blue-100 to-green-200" 
       style={getBackgroundStyle()}
     >
+      {/* Paysage naturel */}
+      {renderBackgroundNature()}
       {/* Stars in the background */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {renderStars()}
       </div>
       
@@ -185,8 +275,23 @@ const AnimationScene: React.FC<AnimationSceneProps> = ({ id }) => {
       
       {/* Ground with characters */}
       <div className="relative" style={groundStyle}>
-        <Character type="mother" progress={progress} brightness={brightness} />
-        <Character type="child" progress={progress} brightness={brightness} />
+        {/* Personnage mère suit le sentier */}
+        <div style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+          {(() => {
+            const { x, y } = getMotherPosition(progress);
+            return (
+              <div style={{ position: 'absolute', left: `${x / 10}%`, top: `${y / 6}%`, transform: 'translate(-50%, -50%)' }}>
+                <Character type="mother" progress={progress} brightness={brightness} />
+              </div>
+            );
+          })()}
+        </div>
+        {/* Personnage enfant à la fin du sentier */}
+        {progress > 90 && (
+          <div style={{ position: 'absolute', left: '90%', top: '80%', transform: 'translate(-50%, -50%)' }}>
+            <Character type="child" progress={progress} brightness={brightness} />
+          </div>
+        )}
       </div>
       
       {/* Initial instructions overlay */}
@@ -244,6 +349,19 @@ const AnimationScene: React.FC<AnimationSceneProps> = ({ id }) => {
           style={{ width: `${progress}%` }}
         />
       </div>
+      
+      {/* Audio elements */}
+      <audio ref={musicRef} src={backgroundMusic} preload="auto" />
+      <audio ref={birdsRef} src={birdsSound} preload="auto" />
+      <audio ref={windRef} src={windSound} preload="auto" />
+      {/* Bouton mute */}
+      <button
+        className="fixed top-4 right-4 z-50 bg-white/70 rounded-full px-3 py-2 text-gray-700 text-sm shadow"
+        onClick={() => setMuted((m) => !m)}
+        aria-label={muted ? 'Activer le son' : 'Couper le son'}
+      >
+        {muted ? '🔇 Son coupé' : '🔊 Son actif'}
+      </button>
     </div>
   );
 };

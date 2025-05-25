@@ -1,17 +1,27 @@
 import React, { useState } from 'react';
 import { useAnimation } from '../context/AnimationContext';
 import { Share2, Copy, Check } from 'lucide-react';
+import { isOnline } from '../utils/supabaseClient';
 
 const ShareLink: React.FC = () => {
-  const { id, generateNewId } = useAnimation();
+  const { generateNewId } = useAnimation();
   const [copied, setCopied] = useState(false);
   const [animationLink, setAnimationLink] = useState('');
   const [loading, setLoading] = useState(false);
+  const [online, setOnline] = useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    isOnline().then(setOnline);
+  }, []);
 
   const handleGenerateLink = async () => {
     setLoading(true);
     const newId = await generateNewId();
-    const link = `${window.location.origin}/animation/${newId}`;
+    // Utilise l'URL Netlify si online, sinon local
+    const baseUrl = online
+      ? 'https://mymomloveme.netlify.app'
+      : window.location.origin;
+    const link = `${baseUrl}/animation/${newId}`;
     setAnimationLink(link);
     setCopied(false);
     setLoading(false);
@@ -26,7 +36,11 @@ const ShareLink: React.FC = () => {
   return (
     <div className="w-full max-w-md mx-auto my-6">
       <h2 className="text-xl font-light mb-4">Partager l'animation</h2>
-      
+      {online === false && (
+        <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded text-center text-sm">
+          ⚠️ Le site n'est pas en ligne sur Netlify. Le lien généré ne sera accessible que sur cet appareil.
+        </div>
+      )}
       <button
         onClick={handleGenerateLink}
         className="w-full py-3 bg-purple-600 text-white rounded-md flex items-center justify-center mb-4 disabled:opacity-60"
