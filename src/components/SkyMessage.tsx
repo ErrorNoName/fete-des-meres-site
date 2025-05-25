@@ -10,49 +10,113 @@ interface SkyMessageProps {
 
 const SkyMessage: React.FC<SkyMessageProps> = ({ message, progress, brightness }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [hasAppeared, setHasAppeared] = useState(false);
+  const [isFading, setIsFading] = useState(false);
+  
+  // Zone d'apparition du message (plus proactive et poétique)
   useEffect(() => {
-    if (progress >= message.position && progress <= message.position + 20) {
+    // Le message apparaît à sa position et disparaît progressivement
+    if (progress >= message.position - 2 && progress <= message.position + 15) {
+      if (!hasAppeared) {
+        setHasAppeared(true);
+      }
       setIsVisible(true);
-    } else {
-      setIsVisible(false);
+      setIsFading(false);
+    } else if (hasAppeared && progress > message.position + 15) {
+      setIsFading(true);
+      // Message disparaît doucement
+      setTimeout(() => {
+        setIsVisible(false);
+      }, 2000);
     }
-  }, [progress, message.position]);
+  }, [progress, message.position, hasAppeared]);
 
+  // Calcul délicat de l'opacité pour des transitions douces
   const getOpacity = () => {
-    if (progress < message.position) return 0;
-    if (progress > message.position + 20) return 0;
-    if (progress < message.position + 5) {
-      return (progress - message.position) / 5;
+    if (!isVisible) return 0;
+    
+    if (progress < message.position) {
+      return (progress - (message.position - 2)) / 2;
     }
-    if (progress > message.position + 15) {
-      return 1 - (progress - (message.position + 15)) / 5;
+    
+    if (progress > message.position + 10) {
+      return 1 - (progress - (message.position + 10)) / 5;
     }
+    
     return 1;
   };
+  
+  // Ne rien rendre si pas visible du tout
+  if (!isVisible && !isFading) return null;
 
-  // Ajoute un effet de glissement et nuage
   return (
     <motion.div
-      className="absolute left-1/2 text-center w-4/5 pointer-events-none"
+      className="absolute left-1/2 w-full max-w-md px-6 pointer-events-none z-10"
       style={{
-        top: '20%',
-        opacity: isVisible ? getOpacity() : 0,
-        color: `rgba(60, 60, 60, ${getOpacity()})`,
-        textShadow: `0 2px 8px rgba(255,255,255,0.7)`
+        top: '30%',
+        transform: 'translateX(-50%)',
       }}
-      initial={{ y: 40, scale: 0.9 }}
-      animate={{ y: isVisible ? 0 : 40, scale: isVisible ? 1 : 0.9 }}
-      transition={{ duration: 1 }}
+      initial={{ opacity: 0, y: 20, scale: 0.9 }}
+      animate={{ 
+        opacity: getOpacity(),
+        y: isVisible ? 0 : 20,
+        scale: isVisible ? 1 : 0.9
+      }}
+      transition={{ duration: 1.5, ease: "easeOut" }}
     >
-      {/* Nuage stylisé */}
-      <svg width="320" height="60" viewBox="0 0 320 60" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 0 }}>
-        <ellipse cx="160" cy="30" rx="120" ry="22" fill="#fff" opacity="0.7" />
-        <ellipse cx="80" cy="32" rx="30" ry="14" fill="#fff" opacity="0.5" />
-        <ellipse cx="240" cy="28" rx="28" ry="12" fill="#fff" opacity="0.5" />
-      </svg>
-      <span style={{ position: 'relative', zIndex: 1, fontSize: '1.3rem', fontWeight: 300, fontFamily: 'serif', letterSpacing: 1 }}>
-        {message.text}
-      </span>
+      {/* Message avec style typographique élégant */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: getOpacity() }}
+        transition={{ duration: 1.2, delay: 0.3 }}
+        style={{
+          position: 'relative',
+          textAlign: 'center',
+        }}
+      >
+        {/* Halo lumineux autour du texte */}
+        <div 
+          style={{
+            position: 'absolute',
+            inset: '-2rem',
+            background: `radial-gradient(ellipse at center, 
+              rgba(255,255,255,${0.15 * getOpacity()}) 0%, 
+              rgba(255,255,255,0) 70%)`,
+            filter: `blur(${8 + brightness * 5}px)`,
+            zIndex: -1,
+          }}
+        />
+        
+        {/* Texte avec typographie émotive */}
+        <p
+          style={{
+            fontFamily: "'Cormorant Garamond', serif, 'Times New Roman', Times, serif",
+            fontSize: '1.5rem',
+            fontWeight: 300,
+            lineHeight: 1.5,
+            color: `rgba(255, 255, 255, ${0.8 + brightness * 0.2})`,
+            textShadow: `0 0 ${10 + brightness * 15}px rgba(255, 255, 255, ${0.5 * getOpacity()})`,
+            letterSpacing: '0.03em',
+          }}
+        >
+          {message.text}
+        </p>
+        
+        {/* Trait lumineux délicat sous le texte */}
+        <motion.div
+          initial={{ width: '0%', opacity: 0 }}
+          animate={{ width: '80%', opacity: getOpacity() * 0.6 }}
+          transition={{ duration: 1.5, delay: 0.8 }}
+          style={{
+            height: '1px',
+            background: `linear-gradient(to right, 
+              rgba(255,255,255,0) 0%, 
+              rgba(255,255,255,${0.7 * getOpacity()}) 50%, 
+              rgba(255,255,255,0) 100%)`,
+            margin: '1rem auto',
+          }}
+        />
+      </motion.div>
     </motion.div>
   );
 };

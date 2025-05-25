@@ -8,94 +8,111 @@ interface CharacterProps {
 }
 
 const Character: React.FC<CharacterProps> = ({ type, progress, brightness }) => {
-  // Mother character moves across the screen based on progress
-  // Child character appears at the end
-
-  const colorIntensity = Math.min(brightness * 2, 1);
+  // Intensité de la lumière basée sur la progression et le type
+  const luminosity = type === 'mother' 
+    ? Math.min(0.4 + brightness * 0.6, 1) 
+    : Math.min((progress - 90) * 0.1, 0.8);
   
-  const baseColor = type === 'mother' 
-    ? `rgba(255, ${Math.round(105 * colorIntensity)}, ${Math.round(180 * colorIntensity)}, 1)` 
-    : `rgba(${Math.round(100 * colorIntensity)}, ${Math.round(149 * colorIntensity)}, 255, 1)`;
-
-  const shadowColor = type === 'mother'
-    ? `rgba(255, ${Math.round(105 * colorIntensity)}, ${Math.round(180 * colorIntensity)}, 0.4)`
-    : `rgba(${Math.round(100 * colorIntensity)}, ${Math.round(149 * colorIntensity)}, 255, 0.4)`;
-
-  const isChildVisible = progress > 90;
+  // Couleurs émotives différentes pour la mère et l'enfant
+  const baseHue = type === 'mother' ? 340 : 30; // Rose pour mère, doré pour enfant
   
+  // Taille des sphères et de leurs auras
+  const size = type === 'mother' ? 30 : 20;
+  const glowSize = size * (1.8 + brightness * 0.5);
+  
+  // Pulsation subtile pour simuler la respiration/émotion
+  const pulseAnimation = {
+    scale: [1, 1.05, 1],
+    transition: {
+      duration: type === 'mother' ? 3 : 2,
+      ease: "easeInOut",
+      repeat: Infinity,
+    }
+  };
+  
+  // Visibilité basée sur la progression
+  const isMotherVisible = type === 'mother';
+  const isChildVisible = type === 'child' && progress > 80;
+  const opacity = type === 'mother' 
+    ? 1 
+    : Math.min((progress - 80) / 15, 1);
+  
+  // Ne pas afficher si pas visible
+  if ((type === 'mother' && !isMotherVisible) || (type === 'child' && !isChildVisible)) {
+    return null;
+  }
+
   return (
-    <>
-      {type === 'mother' && (
-        <motion.div
-          className="absolute"
-          style={{
-            bottom: '15%',
-            left: `${progress}%`,
-            translateX: '-50%',
-            filter: `drop-shadow(0 0 10px ${shadowColor})`,
-          }}
-          animate={{
-            rotate: progress * 3.6, // Roll animation
-          }}
-        >
-          <svg width="50" height="50" viewBox="0 0 50 50">
-            <circle 
-              cx="25" 
-              cy="25" 
-              r="20" 
-              fill="none" 
-              stroke={baseColor} 
-              strokeWidth="2" 
-            />
-            <circle 
-              cx="25" 
-              cy="25" 
-              r="18" 
-              fill="none" 
-              stroke={baseColor} 
-              strokeWidth="1" 
-              strokeDasharray="4 4" 
-            />
-          </svg>
-        </motion.div>
-      )}
+    <motion.div
+      initial={type === 'child' ? { scale: 0.3, opacity: 0 } : {}}
+      animate={{
+        ...pulseAnimation,
+        opacity: opacity
+      }}
+      style={{
+        position: 'absolute',
+        pointerEvents: 'none',
+      }}
+    >
+      {/* Aura extérieure diffuse */}
+      <div 
+        style={{
+          position: 'absolute',
+          width: glowSize * 2.5,
+          height: glowSize * 2.5,
+          borderRadius: '50%',
+          background: `radial-gradient(circle, 
+            hsla(${baseHue}, 100%, 70%, ${luminosity * 0.3}) 0%, 
+            hsla(${baseHue}, 100%, 70%, 0) 70%)`,
+          transform: 'translate(-50%, -50%)',
+          filter: `blur(${10 + brightness * 10}px)`,
+        }}
+      />
       
-      {type === 'child' && isChildVisible && (
-        <motion.div
-          className="absolute"
-          style={{
-            bottom: '15%',
-            left: '95%',
-            translateX: '-50%',
-            filter: `drop-shadow(0 0 10px ${shadowColor})`,
-          }}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ 
-            opacity: (progress - 90) * 10,
-            scale: Math.min((progress - 90) / 5, 1),
-          }}
-        >
-          <svg width="40" height="40" viewBox="0 0 40 40">
-            <circle 
-              cx="20" 
-              cy="20" 
-              r="15" 
-              fill="none" 
-              stroke={baseColor} 
-              strokeWidth="2" 
-            />
-            <circle 
-              cx="20" 
-              cy="20" 
-              r="12" 
-              fill="none" 
-              stroke={baseColor} 
-              strokeWidth="1" 
-            />
-          </svg>
-        </motion.div>
-      )}
-    </>
+      {/* Aura intermédiaire */}
+      <div 
+        style={{
+          position: 'absolute',
+          width: glowSize * 1.8,
+          height: glowSize * 1.8,
+          borderRadius: '50%',
+          background: `radial-gradient(circle, 
+            hsla(${baseHue}, 100%, 80%, ${luminosity * 0.5}) 0%, 
+            hsla(${baseHue}, 100%, 80%, 0) 70%)`,
+          transform: 'translate(-50%, -50%)',
+          filter: `blur(${5 + brightness * 8}px)`,
+        }}
+      />
+      
+      {/* Sphère centrale avec éclat */}
+      <div 
+        style={{
+          position: 'absolute',
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          background: `radial-gradient(circle at 40% 40%, 
+            hsla(${baseHue}, 100%, 98%, ${luminosity * 0.95}),
+            hsla(${baseHue}, 85%, 80%, ${luminosity * 0.8}) 60%,
+            hsla(${baseHue - 10}, 70%, 70%, ${luminosity * 0.7}) 100%)`,
+          boxShadow: `0 0 ${10 + brightness * 20}px ${size/3}px hsla(${baseHue}, 100%, 80%, ${luminosity * 0.8})`,
+          transform: 'translate(-50%, -50%)',
+        }}
+      />
+      
+      {/* Éclat central */}
+      <div 
+        style={{
+          position: 'absolute',
+          width: size * 0.4,
+          height: size * 0.4,
+          borderRadius: '50%',
+          background: `hsla(${baseHue - 10}, 100%, 98%, ${luminosity * 0.95})`,
+          transform: 'translate(-50%, -50%) translate(20%, 20%)',
+          filter: 'blur(1px)',
+        }}
+      />
+    </motion.div>
   );
 };
 

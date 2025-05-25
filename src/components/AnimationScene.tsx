@@ -17,6 +17,9 @@ const AnimationScene: React.FC<AnimationSceneProps> = ({ id }) => {
   const [shakeDetected, setShakeDetected] = useState(false);
   const [motionPermissionGranted, setMotionPermissionGranted] = useState(false);
   const [showFinalMessage, setShowFinalMessage] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [messageIndex, setMessageIndex] = useState(-1);
+  const [autoProgress, setAutoProgress] = useState(true);
   const lastShakeTime = useRef(0);
   const progressRef = useRef(0);
   // Audio refs
@@ -112,17 +115,89 @@ const AnimationScene: React.FC<AnimationSceneProps> = ({ id }) => {
     }
   }, [progress]);
   
-  // Background gradient based on progress
+  // Avancement automatique avec arrêts aux messages
+  useEffect(() => {
+    if (!autoProgress || progress >= 100) return;
+    
+    const messagePositions = messages.map(m => m.position);
+    
+    // Trouver si on est à une position de message
+    const nearestMessageIdx = messagePositions.findIndex(pos => 
+      Math.abs(progress - pos) < 1
+    );
+    
+    if (nearestMessageIdx !== -1 && messageIndex !== nearestMessageIdx) {
+      // Pause à un message
+      setIsPaused(true);
+      setMessageIndex(nearestMessageIdx);
+      
+      // Jouer le son de tintement
+      const tinkle = new Audio('/music/tinkle.mp3');
+      if (!muted) {
+        tinkle.volume = 0.5;
+        tinkle.play();
+      }
+      
+      // Attendre 5 secondes puis continuer
+      setTimeout(() => {
+        setIsPaused(false);
+      }, 5000);
+    } else if (!isPaused) {
+      // Avancement automatique doux
+      const timer = setInterval(() => {
+        setProgress(prev => {
+          const newProgress = Math.min(prev + (speed / 200), 100);
+          progressRef.current = newProgress;
+          return newProgress;
+        });
+      }, 50);
+      
+      return () => clearInterval(timer);
+    }
+  }, [progress, messages, isPaused, autoProgress, messageIndex, speed, muted]);
+  
+  // Mise à jour des sons selon la progression
+  useEffect(() => {
+    if (musicRef.current && !muted) {
+      // Transition musicale selon la progression
+      if (progress > 70) {
+        // Transition vers des nappes musicales éthérées
+        musicRef.current.volume = Math.max(0.2, 0.5 - (progress - 70) / 60);
+        
+        // Tentative de charger et jouer la musique éthérée
+        const etherealMusic = new Audio('/music/ethereal.mp3');
+        etherealMusic.volume = Math.min((progress - 70) / 30 * 0.5, 0.5);
+        etherealMusic.loop = true;
+        etherealMusic.play().catch(() => {});
+      }
+    }
+  }, [progress, muted]);
+  
+  // Palette de couleur chaude au départ, évoluant vers blanc-rosé
   const getBackgroundStyle = () => {
-    const bgOpacity = Math.min(brightness * 1.5, 1);
+    // Couleurs de base chaudes au début
+    const startColor = {
+      r: 40,
+      g: 10, 
+      b: 30
+    };
+    
+    // Couleurs finales plus claires et rosées
+    const endColor = {
+      r: 50 + 150 * brightness,
+      g: 20 + 140 * brightness,
+      b: 60 + 120 * brightness
+    };
+    
+    // Interpolation des couleurs
+    const r = startColor.r + (endColor.r - startColor.r) * brightness;
+    const g = startColor.g + (endColor.g - startColor.g) * brightness;
+    const b = startColor.b + (endColor.b - startColor.b) * brightness;
     
     return {
-      background: `
-        linear-gradient(to bottom, 
-          rgba(0, 0, 0, ${1 - bgOpacity}) 0%,
-          rgba(${25 * brightness}, ${5 * brightness}, ${50 * brightness}, ${1 - brightness * 0.5}) 50%,
-          rgba(${40 * brightness}, ${10 * brightness}, ${80 * brightness}, ${1 - brightness * 0.3}) 100%)
-      `,
+      background: `linear-gradient(to bottom,
+        rgb(${r}, ${g}, ${b}) 0%,
+        rgb(${r * 0.8}, ${g * 0.8}, ${b * 0.9}) 100%)`,
     };
   };
   
@@ -167,61 +242,102 @@ const AnimationScene: React.FC<AnimationSceneProps> = ({ id }) => {
     borderTop: `1px solid rgba(${100 * brightness}, ${50 * brightness}, ${150 * brightness}, ${brightness})`,
   };
   
-  // Ajout d'un paysage naturel épuré et d'un sentier
+  // Nouveau style visuel pour une expérience minimaliste et émotive
   const renderBackgroundNature = () => {
-    // Prairie, sentier, arbres stylisés, soleil
+    // Décors minimalistes avec dégradés subtils
     return (
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1000 600" preserveAspectRatio="none">
-        {/* Ciel dégradé */}
+        {/* Dégradés pour le ciel et le sol */}
         <defs>
           <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#b3e0ff" />
-            <stop offset="100%" stopColor="#e6ffe6" />
+            <stop offset="0%" stopColor={`rgba(${40 + 210 * brightness}, ${10 + 150 * brightness}, ${60 + 170 * brightness}, 1)`} />
+            <stop offset="100%" stopColor={`rgba(${130 + 100 * brightness}, ${50 + 150 * brightness}, ${160 + 60 * brightness}, 1)`} />
           </linearGradient>
+          <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5" fx="0.5" fy="0.5">
+            <stop offset="0%" stopColor={`rgba(255, ${180 + 75 * brightness}, ${200 + 55 * brightness}, ${0.3 + 0.4 * brightness})`} />
+            <stop offset="100%" stopColor="rgba(255, 255, 255, 0)" />
+          </radialGradient>
           <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#b6e2a1" />
-            <stop offset="100%" stopColor="#6db37b" />
+            <stop offset="0%" stopColor={`rgba(${60 + 30 * brightness}, ${20 + 40 * brightness}, ${90 + 20 * brightness}, 1)`} />
+            <stop offset="100%" stopColor={`rgba(${30 + 20 * brightness}, ${10 + 30 * brightness}, ${40 + 20 * brightness}, 1)`} />
           </linearGradient>
+          <filter id="bloom" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="10" />
+          </filter>
         </defs>
+        
         {/* Ciel */}
-        <rect x="0" y="0" width="1000" height="400" fill="url(#sky)" />
-        {/* Soleil */}
-        <circle cx={200 + 600 * brightness} cy={120 - 40 * brightness} r="40" fill="#fff9c4" opacity={0.7 + 0.3 * brightness} />
-        {/* Nuages */}
-        <ellipse cx="300" cy="100" rx="60" ry="20" fill="#fff" opacity="0.5" />
-        <ellipse cx="700" cy="80" rx="50" ry="18" fill="#fff" opacity="0.4" />
-        {/* Arbres */}
-        <ellipse cx="120" cy="340" rx="18" ry="60" fill="#a3c585" opacity="0.7" />
-        <ellipse cx="880" cy="350" rx="22" ry="70" fill="#a3c585" opacity="0.6" />
-        {/* Sol */}
-        <rect x="0" y="400" width="1000" height="200" fill="url(#ground)" />
-        {/* Sentier sinueux */}
-        <path d="M 100 500 Q 300 420 500 520 Q 700 600 900 480" stroke="#e2c799" strokeWidth="30" fill="none" opacity="0.7" />
-        {/* Fleurs */}
-        <circle cx="200" cy="550" r="5" fill="#ffb6b9" />
-        <circle cx="800" cy="570" r="4" fill="#fff176" />
+        <rect x="0" y="0" width="1000" height="500" fill="url(#sky)" />
+        
+        {/* Aura lumineuse diffuse (évolue avec la progression) */}
+        <circle 
+          cx={200 + 600 * brightness} 
+          cy="150" 
+          r={120 + 80 * brightness} 
+          fill="url(#glow)" 
+          style={{ filter: 'blur(40px)' }}
+        />
+        
+        {/* Silhouettes organiques (éléments de la grotte vers la fin) */}
+        <path 
+          d={`M -10,400 Q 200,${380 - 50 * brightness} 400,${400 + 20 * brightness} T 800,${410 - 30 * brightness} T 1010,390`} 
+          fill={`rgba(${40 + 10 * brightness}, ${30 + 20 * brightness}, ${60 + 10 * brightness}, ${0.6 + 0.4 * brightness})`} 
+          style={{ filter: 'blur(3px)' }}
+        />
+        
+        {/* Herbes douces stylisées */}
+        {Array.from({ length: 15 }).map((_, i) => (
+          <path 
+            key={`grass-${i}`} 
+            d={`M ${70 + i * 60 + Math.sin(i) * 30},500 Q ${80 + i * 60 + Math.sin(i) * 30},${480 - Math.random() * 40} ${90 + i * 60 + Math.sin(i) * 30},500`} 
+            stroke={`rgba(${140 + 60 * brightness}, ${160 + 70 * brightness}, ${100 + 90 * brightness}, ${0.4 + 0.4 * brightness})`} 
+            strokeWidth="3"
+            fill="none"
+          />
+        ))}
+        
+        {/* Fleurs pastel */}
+        {Array.from({ length: 8 }).map((_, i) => (
+          <g key={`flower-${i}`} style={{ opacity: 0.2 + 0.7 * brightness }}>
+            <circle 
+              cx={120 + i * 110 + Math.sin(i * 3) * 50} 
+              cy={490 - Math.random() * 20} 
+              r={3 + Math.random() * 3}
+              fill={i % 3 === 0 ? '#ffb6c1' : i % 3 === 1 ? '#ffe4b5' : '#b0e0e6'} 
+            />
+          </g>
+        ))}
+        
+        {/* Sentier subtil (clairière vers la grotte) */}
+        <path 
+          d="M 50,500 Q 300,480 500,510 Q 700,540 950,490" 
+          stroke={`rgba(${170 + 50 * brightness}, ${160 + 70 * brightness}, ${190 + 30 * brightness}, ${0.3 + 0.2 * brightness})`} 
+          strokeWidth="30" 
+          fill="none" 
+          strokeLinecap="round"
+          style={{ filter: 'blur(8px)' }}
+        />
+        
+        {/* Sol avec texture douce */}
+        <rect x="0" y="500" width="1000" height="100" fill="url(#ground)" />
       </svg>
     );
   };
-  
-  // Améliore le mouvement du personnage pour suivre le sentier
+
+  // Nouvelle fonction pour l'effet de bloom autour des sphères
+  const getBloomIntensity = () => {
+    return 5 + 15 * brightness;
+  };
+
+  // Position sur le chemin avec une courbe plus naturelle et poétique
   const getMotherPosition = (progress: number) => {
-    // Sentier : M 100 500 Q 300 420 500 520 Q 700 600 900 480
-    // Interpolation sur 3 segments de Bézier
+    // Courbe poétique qui suit la clairière vers la grotte
     const t = progress / 100;
-    let x, y;
-    if (t < 0.5) {
-      // Premier segment
-      const t2 = t * 2;
-      // Quadratic Bézier: (1-t)^2*100 + 2*(1-t)*t*300 + t^2*500
-      x = (1 - t2) * (1 - t2) * 100 + 2 * (1 - t2) * t2 * 300 + t2 * t2 * 500;
-      y = (1 - t2) * (1 - t2) * 500 + 2 * (1 - t2) * t2 * 420 + t2 * t2 * 520;
-    } else {
-      // Second segment
-      const t2 = (t - 0.5) * 2;
-      x = (1 - t2) * (1 - t2) * 500 + 2 * (1 - t2) * t2 * 700 + t2 * t2 * 900;
-      y = (1 - t2) * (1 - t2) * 520 + 2 * (1 - t2) * t2 * 600 + t2 * t2 * 480;
-    }
+    // Position plus fluide avec une courbe cubique naturelle
+    const x = 50 + 900 * t;
+    // Mouvement ondulant léger pour donner une impression de flottement
+    const y = 490 - 20 * Math.sin(t * Math.PI * 2) - t * 20;
+    
     return { x, y };
   };
   
@@ -251,18 +367,19 @@ const AnimationScene: React.FC<AnimationSceneProps> = ({ id }) => {
   
   return (
     <div 
-      className="fixed inset-0 flex flex-col overflow-hidden bg-gradient-to-b from-blue-100 to-green-200" 
+      className="fixed inset-0 flex flex-col overflow-hidden" 
       style={getBackgroundStyle()}
     >
       {/* Paysage naturel */}
       {renderBackgroundNature()}
-      {/* Stars in the background */}
+      
+      {/* Étoiles subtiles / particules de lumière */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {renderStars()}
       </div>
       
-      {/* Messages in the sky */}
-      <div className="relative flex-1">
+      {/* Messages dans le ciel */}
+      <div className="relative flex-1 z-10">
         {messages.map(message => (
           <SkyMessage 
             key={message.id} 
@@ -273,94 +390,137 @@ const AnimationScene: React.FC<AnimationSceneProps> = ({ id }) => {
         ))}
       </div>
       
-      {/* Ground with characters */}
-      <div className="relative" style={groundStyle}>
-        {/* Personnage mère suit le sentier */}
-        <div style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+      {/* Zone des personnages (sphères lumineuses) */}
+      <div className="relative h-1/2 pointer-events-none">
+        {/* Mère-sphère qui suit le chemin */}
+        <div style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' }}>
           {(() => {
             const { x, y } = getMotherPosition(progress);
             return (
-              <div style={{ position: 'absolute', left: `${x / 10}%`, top: `${y / 6}%`, transform: 'translate(-50%, -50%)' }}>
+              <div style={{ position: 'absolute', left: `${x / 10}%`, top: `${y / 6}%` }}>
                 <Character type="mother" progress={progress} brightness={brightness} />
               </div>
             );
           })()}
         </div>
-        {/* Personnage enfant à la fin du sentier */}
-        {progress > 90 && (
-          <div style={{ position: 'absolute', left: '90%', top: '80%', transform: 'translate(-50%, -50%)' }}>
-            <Character type="child" progress={progress} brightness={brightness} />
-          </div>
-        )}
+        
+        {/* Enfant-sphère qui attend à la fin */}
+        <div style={{ position: 'absolute', right: '10%', bottom: '20%' }}>
+          <Character type="child" progress={progress} brightness={brightness} />
+        </div>
       </div>
       
-      {/* Initial instructions overlay */}
+      {/* Interaction initiale */}
       {progress === 0 && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/70 text-white z-10">
-          <div className="text-center p-6">
-            <p className="text-xl mb-4">Secouez votre téléphone pour commencer</p>
-            <div className="animate-bounce">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2v20M4 12l8 8 8-8"/>
-              </svg>
-            </div>
-          </div>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/80 text-white z-20">
+          <motion.div 
+            className="text-center p-8 max-w-md"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.5, delay: 0.5 }}
+          >
+            <h2 
+              style={{ 
+                fontFamily: "'Cormorant Garamond', serif", 
+                fontSize: '1.8rem', 
+                fontWeight: 300,
+                letterSpacing: '0.05em',
+                marginBottom: '1.5rem',
+                color: 'rgba(255, 255, 255, 0.95)',
+                textShadow: '0 0 15px rgba(255, 255, 255, 0.8)'
+              }}
+            >
+              Pour ma Mère
+            </h2>
+            <p 
+              style={{ 
+                fontFamily: "'Cormorant Garamond', serif", 
+                fontSize: '1.2rem', 
+                fontWeight: 300,
+                lineHeight: 1.6,
+                marginBottom: '2rem',
+                color: 'rgba(255, 255, 255, 0.85)',
+              }}
+            >
+              Suivez le voyage d'une sphère de lumière, symbole d'amour maternel, 
+              dans un moment de tendresse partagée.
+            </p>
+            <motion.button
+              className="px-6 py-3 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setAutoProgress(true)}
+            >
+              Commencer l'expérience
+            </motion.button>
+            <p className="text-xs mt-6 text-white/60">
+              Ou touchez l'écran pour avancer manuellement
+            </p>
+          </motion.div>
         </div>
       )}
       
-      {/* Final message with heart animation */}
-      {showFinalMessage && (
+      {/* Moment final de réunion */}
+      {progress >= 95 && (
         <motion.div 
           className="fixed inset-0 flex flex-col items-center justify-center z-20"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1 }}
+          transition={{ duration: 2 }}
         >
-          <div className="bg-black/30 backdrop-blur-sm p-8 rounded-xl text-center">
+          <div className="text-center p-6">
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.5, duration: 0.8, type: "spring" }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 100, 
+                delay: 1, 
+                duration: 1.5 
+              }}
             >
-              <Heart className="w-20 h-20 text-pink-500 mx-auto mb-4 animate-pulse" />
+              <div 
+                style={{
+                  width: '150px',
+                  height: '150px',
+                  borderRadius: '50%',
+                  margin: '0 auto 2rem',
+                  background: `radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,230,240,0.8) 50%, rgba(255,200,230,0) 100%)`,
+                  filter: 'blur(15px)',
+                }}
+              />
             </motion.div>
             
             <motion.p 
-              className="text-3xl font-light text-white"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 1, duration: 0.5 }}
+              style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: '2.2rem',
+                fontWeight: 300,
+                color: 'white',
+                textShadow: '0 0 20px rgba(255, 255, 255, 0.8)'
+              }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 2 }}
             >
-              Je t'aime
+              Je t'aime, Maman
             </motion.p>
           </div>
         </motion.div>
       )}
       
-      {/* Visual feedback for shake detection */}
-      {shakeDetected && (
-        <div className="fixed inset-0 bg-white/10 pointer-events-none" />
-      )}
-      
-      {/* Progress indicator */}
-      <div className="fixed bottom-4 left-4 right-4 h-1 bg-white/20 rounded-full overflow-hidden">
-        <div 
-          className="h-full bg-purple-500 rounded-full"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-      
-      {/* Audio elements */}
+      {/* Audio */}
       <audio ref={musicRef} src={backgroundMusic} preload="auto" />
       <audio ref={birdsRef} src={birdsSound} preload="auto" />
       <audio ref={windRef} src={windSound} preload="auto" />
-      {/* Bouton mute */}
+      
+      {/* Bouton muet */}
       <button
-        className="fixed top-4 right-4 z-50 bg-white/70 rounded-full px-3 py-2 text-gray-700 text-sm shadow"
+        className="fixed top-4 right-4 z-50 bg-white/20 backdrop-blur-sm rounded-full w-12 h-12 flex items-center justify-center text-white hover:bg-white/30"
         onClick={() => setMuted((m) => !m)}
         aria-label={muted ? 'Activer le son' : 'Couper le son'}
       >
-        {muted ? '🔇 Son coupé' : '🔊 Son actif'}
+        {muted ? '🔇' : '🔊'}
       </button>
     </div>
   );
