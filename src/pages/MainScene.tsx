@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { LuminousSphere } from '../components/LuminousSphere';
-import { AudioPlayer } from '../components/AudioPlayer';
 import Particles from '@tsparticles/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -224,84 +223,145 @@ function AnimatedFog() {
   );
 }
 
+// Cœurs, fleurs, lucioles, étoiles, arc lumineux en pixel art
+function PixelHeart({ filled = false }: { filled?: boolean }) {
+  // Cœur pixel art
+  return (
+    <svg width="40" height="36" viewBox="0 0 40 36" style={{imageRendering:'pixelated', display:'inline'}}>
+      <rect x="8" y="8" width="8" height="8" fill={filled ? '#ff6f91' : '#fff'} stroke="#c2185b" strokeWidth="2" />
+      <rect x="24" y="8" width="8" height="8" fill={filled ? '#ff6f91' : '#fff'} stroke="#c2185b" strokeWidth="2" />
+      <rect x="4" y="16" width="32" height="8" fill={filled ? '#ff6f91' : '#fff'} stroke="#c2185b" strokeWidth="2" />
+      <rect x="12" y="24" width="16" height="8" fill={filled ? '#ff6f91' : '#fff'} stroke="#c2185b" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function PixelFlower({ open = false }: { open?: boolean }) {
+  // Fleur pixel art qui éclot
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" style={{imageRendering:'pixelated'}}>
+      <rect x="18" y="30" width="4" height="8" fill="#7fc97f" />
+      {open ? (
+        <>
+          <rect x="16" y="20" width="8" height="8" fill="#fff59d" />
+          <rect x="14" y="18" width="12" height="4" fill="#f9d6f7" />
+        </>
+      ) : (
+        <rect x="18" y="22" width="4" height="8" fill="#fff59d" />
+      )}
+    </svg>
+  );
+}
+
+function PixelFirefly({ lit = false }: { lit?: boolean }) {
+  // Luciole pixel art
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" style={{imageRendering:'pixelated', display:'inline'}}>
+      <rect x="7" y="4" width="4" height="4" fill="#333" />
+      <rect x="8" y="8" width="2" height="2" fill={lit ? '#ffe066' : '#bbb'} />
+    </svg>
+  );
+}
+
+function PixelStar({ glow = false }: { glow?: boolean }) {
+  // Étoile pixel art
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" style={{imageRendering:'pixelated', display:'inline'}}>
+      <rect x="10" y="2" width="4" height="8" fill="#fffde7" />
+      <rect x="2" y="10" width="8" height="4" fill="#fffde7" />
+      <rect x="14" y="10" width="8" height="4" fill="#fffde7" />
+      <rect x="10" y="14" width="4" height="8" fill="#fffde7" />
+      {glow && <rect x="6" y="6" width="12" height="12" fill="#ffe066" opacity="0.3" />}
+    </svg>
+  );
+}
+
+function PixelArc({ drawn = false }: { drawn?: boolean }) {
+  // Arc lumineux pixel art
+  return (
+    <svg width="48" height="24" viewBox="0 0 48 24" style={{imageRendering:'pixelated', display:'inline'}}>
+      <rect x="0" y="20" width="48" height="4" fill="#b7e6e0" />
+      {drawn && <rect x="8" y="12" width="32" height="4" fill="#ffe066" />}
+    </svg>
+  );
+}
+
 // Mini-jeux mignons pour chaque mot
 function MiniGame({ step, onSuccess }: { step: number; onSuccess: () => void }) {
-  // 5 mini-jeux différents, un par mot
   const [open, setOpen] = useState(false);
   const [blown, setBlown] = useState(false);
   const [dragged, setDragged] = useState(false);
   const [drawn, setDrawn] = useState(false);
   if (step === 0) {
-    // Relier deux cœurs
+    // Relier deux cœurs pixel art
     return (
       <div className="flex flex-col items-center">
-        <div className="mb-4 text-pink-200">Relie les deux cœurs pour commencer</div>
+        <div className="mb-4 text-pink-200">Relie les deux cœurs pixelisés</div>
         <button
-          className="text-5xl hover:scale-110 transition-transform"
+          className="hover:scale-110 transition-transform bg-transparent border-none"
           onClick={onSuccess}
-          style={{ background: 'none', border: 'none' }}
         >
-          ❤️‍🔥 ➡️ ❤️
+          <PixelHeart filled={true} />
+          <span className="mx-2">→</span>
+          <PixelHeart />
         </button>
       </div>
     );
   }
   if (step === 1) {
-    // Faire éclore une fleur
+    // Fleur pixel art qui éclot
     return (
       <div className="flex flex-col items-center">
-        <div className="mb-4 text-pink-200">Clique pour faire éclore la fleur</div>
+        <div className="mb-4 text-pink-200">Clique pour faire éclore la fleur pixel</div>
         <button
-          className="transition-transform"
+          className="transition-transform bg-transparent border-none"
           onClick={() => { setOpen(true); setTimeout(onSuccess, 700); }}
-          style={{ background: 'none', border: 'none' }}
         >
-          <span className="text-5xl" role="img" aria-label="fleur">{open ? '🌸' : '🌱'}</span>
+          <PixelFlower open={open} />
         </button>
       </div>
     );
   }
   if (step === 2) {
-    // Souffler sur des lucioles
+    // Souffler sur des lucioles pixel art
     return (
       <div className="flex flex-col items-center">
-        <div className="mb-4 text-pink-200">Souffle sur les lucioles (appuie !)</div>
+        <div className="mb-4 text-pink-200">Souffle sur les lucioles pixel</div>
         <button
-          className="text-4xl hover:scale-110 transition-transform"
+          className="hover:scale-110 transition-transform bg-transparent border-none"
           onClick={() => { setBlown(true); setTimeout(onSuccess, 700); }}
-          style={{ background: 'none', border: 'none' }}
         >
-          {blown ? '✨✨✨' : '🟡🟡🟡'}
+          {blown ? <><PixelFirefly lit /><PixelFirefly lit /><PixelFirefly lit /></> : <><PixelFirefly /><PixelFirefly /><PixelFirefly /></>}
         </button>
       </div>
     );
   }
   if (step === 3) {
-    // Glisser une étoile vers la sphère
+    // Glisser une étoile pixel art
     return (
       <div className="flex flex-col items-center">
-        <div className="mb-4 text-pink-200">Fais glisser l'étoile vers la lumière</div>
+        <div className="mb-4 text-pink-200">Fais glisser l'étoile pixel vers la lumière</div>
         <button
-          className="text-5xl hover:scale-110 transition-transform"
+          className="hover:scale-110 transition-transform bg-transparent border-none"
           onClick={() => { setDragged(true); setTimeout(onSuccess, 700); }}
-          style={{ background: 'none', border: 'none' }}
         >
-          {dragged ? '⭐️✨' : '⭐️➡️💡'}
+          {dragged ? <PixelStar glow /> : <PixelStar />}
+          <span className="mx-2">→</span>
+          <span role="img" aria-label="lumière">💡</span>
         </button>
       </div>
     );
   }
   if (step === 4) {
-    // Dessiner un arc lumineux
+    // Arc lumineux pixel art
     return (
       <div className="flex flex-col items-center">
-        <div className="mb-4 text-pink-200">Trace un arc lumineux (appuie !)</div>
+        <div className="mb-4 text-pink-200">Trace un arc lumineux pixel</div>
         <button
-          className="text-5xl hover:scale-110 transition-transform"
+          className="hover:scale-110 transition-transform bg-transparent border-none"
           onClick={() => { setDrawn(true); setTimeout(onSuccess, 700); }}
-          style={{ background: 'none', border: 'none' }}
         >
-          {drawn ? '🌈✨' : '🌈➡️💡'}
+          <PixelArc drawn={drawn} />
         </button>
       </div>
     );
@@ -325,8 +385,8 @@ export const MainScene: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden relative font-sans flex items-center justify-center" style={{background: 'linear-gradient(to bottom, #2d1b47 0%, #e0b7e6 100%)', minHeight: '100dvh'}}>
-      <Landscape />
+    <div className="min-h-screen w-full overflow-hidden relative font-sans flex flex-col items-center justify-center bg-black" style={{background: 'linear-gradient(to bottom, #2d1b47 0%, #e0b7e6 100%)'}}>
+      <PixelArtBackground />
       <StarSky />
       <Fireflies />
       <Flowers />
@@ -344,7 +404,6 @@ export const MainScene: React.FC = () => {
         </AnimatePresence>
       </div>
       <div className="absolute bottom-0 left-0 w-full z-40 pointer-events-auto flex flex-col items-center justify-center pb-4">
-        <AudioPlayer onPlayingChange={setIsPlaying} />
         {!isEnd && showGame && (
           <MiniGame step={currentMessage} onSuccess={handleGameSuccess} />
         )}
@@ -356,4 +415,48 @@ export const MainScene: React.FC = () => {
       </div>
     </div>
   );
-};
+}
+
+// Nouveau décor pixel art animé
+function PixelArtBackground() {
+  // Inspiré de votre référence, nuages, ciel, étoiles, etc.
+  return (
+    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1280 720" style={{imageRendering: 'pixelated', zIndex: 0}} preserveAspectRatio="xMidYMid slice">
+      <rect width="1280" height="720" fill="#6d4e9e" />
+      {/* Nuages parallax */}
+      <g>
+        <motion.rect x="100" y="120" width="400" height="60" rx="30" fill="#f9d6f7" animate={{ x: [100, 180, 100] }} transition={{ duration: 30, repeat: Infinity, ease: 'linear' }} />
+        <motion.rect x="600" y="80" width="300" height="50" rx="25" fill="#e0b7e6" animate={{ x: [600, 700, 600] }} transition={{ duration: 40, repeat: Infinity, ease: 'linear' }} />
+        <motion.rect x="900" y="200" width="250" height="40" rx="20" fill="#f9d6f7" animate={{ x: [900, 1000, 900] }} transition={{ duration: 50, repeat: Infinity, ease: 'linear' }} />
+      </g>
+      {/* Collines */}
+      <rect x="0" y="600" width="1280" height="120" fill="#4e3573" />
+      <rect x="0" y="650" width="1280" height="70" fill="#2d1b47" />
+      {/* Arbres stylisés */}
+      <g>
+        <rect x="200" y="620" width="12" height="40" fill="#fffbe6" />
+        <rect x="220" y="630" width="10" height="30" fill="#b7e6e0" />
+        <rect x="400" y="640" width="14" height="35" fill="#ffe7b7" />
+        <rect x="600" y="625" width="10" height="40" fill="#e0b7e6" />
+        <rect x="1100" y="630" width="12" height="38" fill="#f9d6f7" />
+      </g>
+      {/* Fleurs pixel */}
+      <g>
+        <rect x="250" y="690" width="4" height="8" fill="#ffe7b7" />
+        <rect x="255" y="692" width="2" height="4" fill="#f9d6f7" />
+        <rect x="800" y="700" width="4" height="8" fill="#b7e6e0" />
+        <rect x="805" y="702" width="2" height="4" fill="#e0b7e6" />
+      </g>
+      {/* Lune pixel */}
+      <rect x="1150" y="60" width="18" height="18" fill="#fffbe6" rx="4" />
+      {/* Étoiles pixel */}
+      <g>
+        <rect x="100" y="40" width="2" height="2" fill="#fff" />
+        <rect x="300" y="60" width="2" height="2" fill="#fff" />
+        <rect x="700" y="30" width="2" height="2" fill="#fff" />
+        <rect x="900" y="90" width="2" height="2" fill="#fff" />
+        <rect x="1200" y="50" width="2" height="2" fill="#fff" />
+      </g>
+    </svg>
+  );
+}
